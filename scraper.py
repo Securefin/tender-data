@@ -3,146 +3,158 @@ from bs4 import BeautifulSoup
 import json
 from datetime import datetime, timedelta
 import hashlib
+import xml.etree.ElementTree as ET
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0"
-}
-
+HEADERS = {"User-Agent": "Mozilla/5.0"}
 IGNORE = ['corrigendum', 'cancelled', 'extension']
 
-# ======================================================
-# MAHATENDERS SCRAPER (Public listing pages)
-# ======================================================
+# ================= DISTRICT ENGINE =================
+DISTRICTS = {
+    "Mumbai": ["mumbai", "bmc"],
+    "Pune": ["pune", "pcmc"],
+    "Nagpur": ["nagpur"],
+    "Nashik": ["nashik"],
+    "Thane": ["thane"],
+    "Ratnagiri": ["ratnagiri", "dapoli", "chiplun"]
+}
 
-MAHA_URLS = [
-    "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page",
-    "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
-]
+def detect_district(text):
+    t = text.lower()
+    for d, keys in DISTRICTS.items():
+        if any(k in t for k in keys):
+            return d
+    return "Other"
 
+# ================= CATEGORY =================
 def get_category(title):
     t = title.lower()
-    if any(k in t for k in ['road', 'civil', 'construction', 'building']):
+    if any(k in t for k in ['road','civil','construction','building']):
         return "Civil"
-    if any(k in t for k in ['electric', 'transformer', 'lighting', 'wiring']):
+    if any(k in t for k in ['electric','transformer','lighting','wiring']):
         return "Electrical"
-    if any(k in t for k in ['vehicle', 'bus', 'transport']):
+    if any(k in t for k in ['vehicle','bus','transport']):
         return "Transport"
-    if any(k in t for k in ['computer', 'software', 'it']):
+    if any(k in t for k in ['computer','software','it']):
         return "IT"
     return "General"
 
-def get_location(text):
-    t = text.lower()
-    if "mumbai" in t: return "Mumbai"
-    if "pune" in t: return "Pune"
-    if "nagpur" in t: return "Nagpur"
-    if "nashik" in t: return "Nashik"
-    if "thane" in t: return "Thane"
-    return "Maharashtra"
+# ================= FREE AI SUMMARY =================
+def ai_summary(title, category, district):
+    return f"{district} me {category} se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
 
-def fetch_mahatenders():
+# ================= MAHATENDERS =================
+def scrape_mahatenders():
+    urls = [
+        "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
+    ]
+
     tenders = []
     seen = set()
 
-    for url in MAHA_URLS:
+    for url in urls:
         try:
-            print("Fetching:", url)
             r = requests.get(url, headers=HEADERS, timeout=30)
             soup = BeautifulSoup(r.text, "html.parser")
 
-            links = soup.find_all("a")
-
-            for a in links:
+            for a in soup.find_all("a"):
                 title = a.text.strip()
-
                 if len(title) < 15:
                     continue
 
-                title_lower = title.lower()
-
-                if any(w in title_lower for w in IGNORE):
+                if any(w in title.lower() for w in IGNORE):
                     continue
 
                 if title in seen:
                     continue
                 seen.add(title)
 
-                link = a.get("href")
+                link = a.get("href") or ""
                 if link and not link.startswith("http"):
                     link = "https://mahatenders.gov.in" + link
 
-                pub = datetime.now()
-                expiry = pub + timedelta(days=15)
-
-                tenders.append({
-                    "id": hashlib.md5(title.encode()).hexdigest(),
-                    "title": title,
-                    "link": link or "https://mahatenders.gov.in",
-                    "category": get_category(title),
-                    "location": get_location(title),
-                    "published": pub.strftime("%Y-%m-%d"),
-                    "expiry": expiry.strftime("%Y-%m-%d"),
-                    "summary": f"{get_location(title)} me {get_category(title)} ka tender jari hua hai."
-                })
-
-        except Exception as e:
-            print("Error:", e)
+                tenders.append((title, link, "Mahatenders"))
+        except:
+            pass
 
     return tenders
 
-# ======================================================
-# FALLBACK RSS (if portal returns low data)
-# ======================================================
+# ================= GEM BASIC =================
+def scrape_gem():
+    tenders = []
+    try:
+        r = requests.get("https://mkp.gem.gov.in/search?q=tender", headers=HEADERS, timeout=30)
+        lines = r.text.split("\n")
 
-def fallback_rss():
-    print("Using fallback RSS...")
-    RSS = "https://news.google.com/rss/search?q=mahatenders.gov.in+tender&hl=en-IN&gl=IN&ceid=IN:en"
+        for line in lines:
+            if "bid no" in line.lower():
+                title = line.strip()
+                tenders.append((title, "https://gem.gov.in", "GeM"))
+    except:
+        pass
+    return tenders
+
+# ================= RSS FALLBACK =================
+def scrape_rss():
+    RSS = "https://news.google.com/rss/search?q=government+tender+india&hl=en-IN&gl=IN&ceid=IN:en"
     tenders = []
 
     try:
-        import xml.etree.ElementTree as ET
         r = requests.get(RSS, timeout=30)
         root = ET.fromstring(r.content)
         items = root.findall(".//item")
 
-        for it in items[:10]:
+        for it in items[:20]:
             title = it.find("title").text.split(" - ")[0]
             link = it.find("link").text
-
-            pub = datetime.now()
-            expiry = pub + timedelta(days=15)
-
-            tenders.append({
-                "id": hashlib.md5(title.encode()).hexdigest(),
-                "title": title,
-                "link": link,
-                "category": get_category(title),
-                "location": get_location(title),
-                "published": pub.strftime("%Y-%m-%d"),
-                "expiry": expiry.strftime("%Y-%m-%d"),
-                "summary": f"{get_location(title)} me {get_category(title)} ka tender jari hua hai."
-            })
-
+            tenders.append((title, link, "RSS"))
     except:
         pass
 
     return tenders
 
-# ======================================================
-# MAIN
-# ======================================================
+# ================= MASTER AGGREGATOR =================
+print("Fetching tenders...")
 
-print("Starting real tender scrape...")
+raw = []
+raw += scrape_mahatenders()
+raw += scrape_gem()
 
-data = fetch_mahatenders()
+if len(raw) < 10:
+    raw += scrape_rss()
 
-# If portal blocked / low results
-if len(data) < 5:
-    print("Low data, using fallback...")
-    data = fallback_rss()
+print("Raw tenders:", len(raw))
 
-print("Final tenders:", len(data))
+# ================= CLEAN + BUILD =================
+data = []
+seen_ids = set()
 
+for title, link, source in raw:
+    tid = hashlib.md5(title.encode()).hexdigest()
+    if tid in seen_ids:
+        continue
+    seen_ids.add(tid)
+
+    category = get_category(title)
+    district = detect_district(title)
+    pub = datetime.now()
+    expiry = pub + timedelta(days=15)
+
+    data.append({
+        "id": tid,
+        "title": title,
+        "link": link,
+        "source": source,
+        "category": category,
+        "location": "India",
+        "district": district,
+        "published": pub.strftime("%Y-%m-%d"),
+        "expiry": expiry.strftime("%Y-%m-%d"),
+        "summary": ai_summary(title, category, district)
+    })
+
+print("Clean tenders:", len(data))
+
+# ================= OUTPUT =================
 output = {
     "updated": datetime.now().strftime("%d %b %Y %H:%M"),
     "total": len(data),
@@ -152,4 +164,4 @@ output = {
 with open("tenders.json", "w", encoding="utf-8") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
 
-print("tenders.json created")
+print("tenders.json generated")
