@@ -1,136 +1,162 @@
 {
-  "updated": "24 Feb 2026 18:40",
+  "updated": "24 Feb 2026 18:46",
   "total": 13,
   "data": [
     {
       "id": "b2119dd0c37bb396e24199d5ffbd0c72",
       "title": "Screen Reader Access",
       "link": "https://mahatenders.gov.in/nicgep/app?page=WebScreenReaderAccess&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "f5dd9080522f2a8578e885db93268ac6",
       "title": "Tenders by Closing Date",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndListTendersbyDate&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "b17a77f8582eb5c60680207319460bdf",
       "title": "Results of Tenders",
       "link": "https://mahatenders.gov.in/nicgep/app?page=ResultOfTenders&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "42f9001784d73509295bb1b0b4b01e8a",
       "title": "« From 15th August 2024 application fees of Rs 500 per bid shall be charged from the bidders",
       "link": "https://mahatenders.gov.in/nicgep/app?page=WebAnnouncements&service=page#388",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "21ebc4442e59a078ecdb0dc64013b88d",
       "title": "« Bidders who are using SB MOPS other banks Internet Banking are requested to make online payment four days in advance.",
       "link": "https://mahatenders.gov.in/nicgep/app?page=WebAnnouncements&service=page#77",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "e4b71976fb12b303a78e0951822d71b4",
       "title": "« For online Payment related issues, kindly send an email with Bank Reference Number to this email ID merchant@sbi.co.in for clarifications.",
       "link": "https://mahatenders.gov.in/nicgep/app?page=WebAnnouncements&service=page#107",
+      "source": "Mahatenders",
       "category": "IT",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me IT ka tender jari hua hai."
+      "summary": "Other me IT se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "cdacc4800e7922f365da7242068e56d0",
       "title": "Tenders by Location",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersByLocation&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "12a4f2dfa4d891a256accc0f48489fe5",
       "title": "Tenders by Organisation",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "69357ac5e8c5252cb580e7db5a05d81c",
       "title": "Tenders by Classification",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersByClassification&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "41b81208d4d9a7652a402df2904efb08",
       "title": "Tenders in Archive",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersInArchive&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "0c97af2b6aa788c107ae867d943f5ada",
       "title": "Site compatibility",
       "link": "https://mahatenders.gov.in/nicgep/app?page=SiteComp&service=page",
+      "source": "Mahatenders",
       "category": "IT",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me IT ka tender jari hua hai."
+      "summary": "Other me IT se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "519f1ab9db1698adb33cf023c98f1393",
       "title": "National Informatics Centre",
       "link": "http://www.nic.in",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     },
     {
       "id": "1e9d19993411018f6ade5d5275b310c0",
       "title": "Portal policies",
       "link": "https://mahatenders.gov.in/nicgep/app?page=Disclaimer&service=page",
+      "source": "Mahatenders",
       "category": "General",
-      "location": "Maharashtra",
+      "location": "India",
+      "district": "Other",
       "published": "2026-02-24",
       "expiry": "2026-03-11",
-      "summary": "Maharashtra me General ka tender jari hua hai."
+      "summary": "Other me General se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
     }
   ]
 }
