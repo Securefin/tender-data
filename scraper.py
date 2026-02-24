@@ -8,22 +8,37 @@ import xml.etree.ElementTree as ET
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 IGNORE = ['corrigendum', 'cancelled', 'extension']
 
-# ================= DISTRICT ENGINE =================
+# ================= SMART DISTRICT ENGINE =================
 DISTRICTS = {
-    "Mumbai": ["mumbai", "bmc"],
-    "Pune": ["pune", "pcmc"],
-    "Nagpur": ["nagpur"],
+    "Mumbai": ["mumbai", "bmc", "andheri", "borivali"],
+    "Pune": ["pune", "pcmc", "pimpri", "chinchwad"],
+    "Nagpur": ["nagpur", "nmc"],
     "Nashik": ["nashik"],
-    "Thane": ["thane"],
+    "Thane": ["thane", "kalyan", "dombivli"],
     "Ratnagiri": ["ratnagiri", "dapoli", "chiplun"]
 }
 
-def detect_district(text):
-    t = text.lower()
-    for d, keys in DISTRICTS.items():
-        if any(k in t for k in keys):
-            return d
-    return "Other"
+ORG_MAP = {
+    "pune municipal": "Pune",
+    "bmc": "Mumbai",
+    "mumbai port": "Mumbai",
+    "nagpur municipal": "Nagpur"
+}
+
+def detect_district(title, link=""):
+    text = (title + " " + link).lower()
+
+    # Org mapping first
+    for org, dist in ORG_MAP.items():
+        if org in text:
+            return dist
+
+    # Keyword mapping
+    for district, keywords in DISTRICTS.items():
+        if any(k in text for k in keywords):
+            return district
+
+    return "India"  # fallback instead of Other
 
 # ================= CATEGORY =================
 def get_category(title):
@@ -40,6 +55,8 @@ def get_category(title):
 
 # ================= FREE AI SUMMARY =================
 def ai_summary(title, category, district):
+    if district == "India":
+        return f"India level par {category} ka ek naya tender jari hua hai. Interested contractors apply kar sakte hain."
     return f"{district} me {category} se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
 
 # ================= MAHATENDERS =================
@@ -135,7 +152,7 @@ for title, link, source in raw:
     seen_ids.add(tid)
 
     category = get_category(title)
-    district = detect_district(title)
+    district = detect_district(title, link)
     pub = datetime.now()
     expiry = pub + timedelta(days=15)
 
