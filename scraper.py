@@ -4,41 +4,50 @@ import json
 from datetime import datetime, timedelta
 import hashlib
 import xml.etree.ElementTree as ET
+import re
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
 IGNORE = ['corrigendum', 'cancelled', 'extension']
 
-# ================= SMART DISTRICT ENGINE =================
-DISTRICTS = {
-    "Mumbai": ["mumbai", "bmc", "andheri", "borivali"],
-    "Pune": ["pune", "pcmc", "pimpri", "chinchwad"],
-    "Nagpur": ["nagpur", "nmc"],
-    "Nashik": ["nashik"],
-    "Thane": ["thane", "kalyan", "dombivli"],
-    "Ratnagiri": ["ratnagiri", "dapoli", "chiplun"]
+# ================= LOCATION ENGINE =================
+INDIA_STATES = {
+    "Maharashtra": ["mumbai","pune","nagpur","thane","nashik","ratnagiri"],
+    "UP": ["lucknow","kanpur","varanasi"],
+    "Delhi": ["delhi","ncr"],
+    "Gujarat": ["surat","ahmedabad"],
+    "Rajasthan": ["jaipur","jodhpur"]
 }
 
-ORG_MAP = {
-    "pune municipal": "Pune",
-    "bmc": "Mumbai",
-    "mumbai port": "Mumbai",
-    "nagpur municipal": "Nagpur"
-}
+def detect_location(text):
+    t = text.lower()
+    for state, cities in INDIA_STATES.items():
+        for city in cities:
+            if city in t:
+                return f"{city.title()}, {state}"
+    return "India"
 
-def detect_district(title, link=""):
-    text = (title + " " + link).lower()
+# ================= PRICE EXTRACTOR =================
+def extract_price(text):
+    text = text.replace(",", "").lower()
 
-    # Org mapping first
-    for org, dist in ORG_MAP.items():
-        if org in text:
-            return dist
+    cr = re.search(r'(\d+(\.\d+)?)\s*cr', text)
+    if cr:
+        return f"{cr.group(1)} Cr"
 
-    # Keyword mapping
-    for district, keywords in DISTRICTS.items():
-        if any(k in text for k in keywords):
-            return district
+    lk = re.search(r'(\d+(\.\d+)?)\s*lakh', text)
+    if lk:
+        return f"{lk.group(1)} Lakh"
 
-    return "India"  # fallback instead of Other
+    rs = re.search(r'₹?\s?(\d{5,})', text)
+    if rs:
+        val = int(rs.group(1))
+        if val >= 10000000:
+            return f"{round(val/10000000,2)} Cr"
+        elif val >= 100000:
+            return f"{round(val/100000,2)} Lakh"
+        return f"₹{val}"
+
+    return "Not specified"
 
 # ================= CATEGORY =================
 def get_category(title):
@@ -53,45 +62,35 @@ def get_category(title):
         return "IT"
     return "General"
 
-# ================= FREE AI SUMMARY =================
-def ai_summary(title, category, district):
-    if district == "India":
-        return f"India level par {category} ka ek naya tender jari hua hai. Interested contractors apply kar sakte hain."
-    return f"{district} me {category} se related ek naya tender jari hua hai. Contractors apply kar sakte hain."
+# ================= SUMMARY =================
+def ai_summary(title, category, location):
+    if location == "India":
+        return f"India level par {category} ka ek naya tender jari hua hai."
+    return f"{location} me {category} se related ek naya tender jari hua hai."
 
 # ================= MAHATENDERS =================
 def scrape_mahatenders():
-    urls = [
-        "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
-    ]
-
+    url = "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
     tenders = []
-    seen = set()
 
-    for url in urls:
-        try:
-            r = requests.get(url, headers=HEADERS, timeout=30)
-            soup = BeautifulSoup(r.text, "html.parser")
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=30)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-            for a in soup.find_all("a"):
-                title = a.text.strip()
-                if len(title) < 15:
-                    continue
+        for a in soup.find_all("a"):
+            title = a.text.strip()
+            if len(title) < 15:
+                continue
+            if any(w in title.lower() for w in IGNORE):
+                continue
 
-                if any(w in title.lower() for w in IGNORE):
-                    continue
+            link = a.get("href") or ""
+            if link and not link.startswith("http"):
+                link = "https://mahatenders.gov.in" + link
 
-                if title in seen:
-                    continue
-                seen.add(title)
-
-                link = a.get("href") or ""
-                if link and not link.startswith("http"):
-                    link = "https://mahatenders.gov.in" + link
-
-                tenders.append((title, link, "Mahatenders"))
-        except:
-            pass
+            tenders.append((title, link, "Mahatenders"))
+    except:
+        pass
 
     return tenders
 
@@ -100,12 +99,9 @@ def scrape_gem():
     tenders = []
     try:
         r = requests.get("https://mkp.gem.gov.in/search?q=tender", headers=HEADERS, timeout=30)
-        lines = r.text.split("\n")
-
-        for line in lines:
+        for line in r.text.split("\n"):
             if "bid no" in line.lower():
-                title = line.strip()
-                tenders.append((title, "https://gem.gov.in", "GeM"))
+                tenders.append((line.strip(), "https://gem.gov.in", "GeM"))
     except:
         pass
     return tenders
@@ -118,9 +114,7 @@ def scrape_rss():
     try:
         r = requests.get(RSS, timeout=30)
         root = ET.fromstring(r.content)
-        items = root.findall(".//item")
-
-        for it in items[:20]:
+        for it in root.findall(".//item")[:20]:
             title = it.find("title").text.split(" - ")[0]
             link = it.find("link").text
             tenders.append((title, link, "RSS"))
@@ -129,7 +123,7 @@ def scrape_rss():
 
     return tenders
 
-# ================= MASTER AGGREGATOR =================
+# ================= AGGREGATOR =================
 print("Fetching tenders...")
 
 raw = []
@@ -139,20 +133,25 @@ raw += scrape_gem()
 if len(raw) < 10:
     raw += scrape_rss()
 
-print("Raw tenders:", len(raw))
+print("Raw:", len(raw))
 
 # ================= CLEAN + BUILD =================
 data = []
-seen_ids = set()
+seen = set()
 
 for title, link, source in raw:
     tid = hashlib.md5(title.encode()).hexdigest()
-    if tid in seen_ids:
+    if tid in seen:
         continue
-    seen_ids.add(tid)
+    seen.add(tid)
 
+    combined = title + " " + link
+
+    location = detect_location(combined)
+    district = location.split(",")[0] if "," in location else "India"
+    value = extract_price(combined)
     category = get_category(title)
-    district = detect_district(title, link)
+
     pub = datetime.now()
     expiry = pub + timedelta(days=15)
 
@@ -162,14 +161,15 @@ for title, link, source in raw:
         "link": link,
         "source": source,
         "category": category,
-        "location": "India",
+        "location": location,
         "district": district,
+        "value": value,
         "published": pub.strftime("%Y-%m-%d"),
         "expiry": expiry.strftime("%Y-%m-%d"),
-        "summary": ai_summary(title, category, district)
+        "summary": ai_summary(title, category, location)
     })
 
-print("Clean tenders:", len(data))
+print("Clean:", len(data))
 
 # ================= OUTPUT =================
 output = {
@@ -181,4 +181,4 @@ output = {
 with open("tenders.json", "w", encoding="utf-8") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
 
-print("tenders.json generated")
+print("tenders.json ready")
