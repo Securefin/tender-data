@@ -1,25 +1,23 @@
 import requests
-import xml.etree.ElementTree as ET
+from bs4 import BeautifulSoup
 import json
 from datetime import datetime, timedelta
 import hashlib
 
-# ================= RSS FEEDS (FIXED) =================
-RSS_FEEDS = [
-    "https://news.google.com/rss/search?q=mahatenders.gov.in+tender&hl=en-IN&gl=IN&ceid=IN:en",
-    "https://news.google.com/rss/search?q=gem.gov.in+tender&hl=en-IN&gl=IN&ceid=IN:en",
-    "https://news.google.com/rss/search?q=government+tender+Maharashtra&hl=en-IN&gl=IN&ceid=IN:en"
-]
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
 
 IGNORE = ['corrigendum', 'cancelled', 'extension']
 
-# ====================================================
+# ======================================================
+# MAHATENDERS SCRAPER (Public listing pages)
+# ======================================================
 
-def clean_date(pub):
-    try:
-        return datetime.strptime(pub[:16], "%a, %d %b %Y")
-    except:
-        return datetime.now()
+MAHA_URLS = [
+    "https://mahatenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page",
+    "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
+]
 
 def get_category(title):
     t = title.lower()
@@ -42,64 +40,109 @@ def get_location(text):
     if "thane" in t: return "Thane"
     return "Maharashtra"
 
-print("Fetching tenders from multiple feeds...")
+def fetch_mahatenders():
+    tenders = []
+    seen = set()
 
-items = []
+    for url in MAHA_URLS:
+        try:
+            print("Fetching:", url)
+            r = requests.get(url, headers=HEADERS, timeout=30)
+            soup = BeautifulSoup(r.text, "html.parser")
 
-# ================= MULTI FEED FETCH =================
-for feed in RSS_FEEDS:
+            links = soup.find_all("a")
+
+            for a in links:
+                title = a.text.strip()
+
+                if len(title) < 15:
+                    continue
+
+                title_lower = title.lower()
+
+                if any(w in title_lower for w in IGNORE):
+                    continue
+
+                if title in seen:
+                    continue
+                seen.add(title)
+
+                link = a.get("href")
+                if link and not link.startswith("http"):
+                    link = "https://mahatenders.gov.in" + link
+
+                pub = datetime.now()
+                expiry = pub + timedelta(days=15)
+
+                tenders.append({
+                    "id": hashlib.md5(title.encode()).hexdigest(),
+                    "title": title,
+                    "link": link or "https://mahatenders.gov.in",
+                    "category": get_category(title),
+                    "location": get_location(title),
+                    "published": pub.strftime("%Y-%m-%d"),
+                    "expiry": expiry.strftime("%Y-%m-%d"),
+                    "summary": f"{get_location(title)} me {get_category(title)} ka tender jari hua hai."
+                })
+
+        except Exception as e:
+            print("Error:", e)
+
+    return tenders
+
+# ======================================================
+# FALLBACK RSS (if portal returns low data)
+# ======================================================
+
+def fallback_rss():
+    print("Using fallback RSS...")
+    RSS = "https://news.google.com/rss/search?q=mahatenders.gov.in+tender&hl=en-IN&gl=IN&ceid=IN:en"
+    tenders = []
+
     try:
-        r = requests.get(feed, timeout=30)
+        import xml.etree.ElementTree as ET
+        r = requests.get(RSS, timeout=30)
         root = ET.fromstring(r.content)
-        items += root.findall(".//item")
-    except Exception as e:
-        print("Feed error:", e)
+        items = root.findall(".//item")
 
-print("Total raw items:", len(items))
+        for it in items[:10]:
+            title = it.find("title").text.split(" - ")[0]
+            link = it.find("link").text
 
-# ====================================================
+            pub = datetime.now()
+            expiry = pub + timedelta(days=15)
 
-data = []
-seen_titles = set()
+            tenders.append({
+                "id": hashlib.md5(title.encode()).hexdigest(),
+                "title": title,
+                "link": link,
+                "category": get_category(title),
+                "location": get_location(title),
+                "published": pub.strftime("%Y-%m-%d"),
+                "expiry": expiry.strftime("%Y-%m-%d"),
+                "summary": f"{get_location(title)} me {get_category(title)} ka tender jari hua hai."
+            })
 
-for it in items:
-    try:
-        title = it.find("title").text.split(" - ")[0]
-        link = it.find("link").text
-        pub = it.find("pubDate").text
     except:
-        continue
+        pass
 
-    title_lower = title.lower()
+    return tenders
 
-    # Ignore unwanted
-    if any(w in title_lower for w in IGNORE):
-        continue
+# ======================================================
+# MAIN
+# ======================================================
 
-    # Remove duplicates
-    if title in seen_titles:
-        continue
-    seen_titles.add(title)
+print("Starting real tender scrape...")
 
-    pub_dt = clean_date(pub)
-    expiry = pub_dt + timedelta(days=15)
+data = fetch_mahatenders()
 
-    tender = {
-        "id": hashlib.md5(title.encode()).hexdigest(),
-        "title": title,
-        "link": link,
-        "category": get_category(title),
-        "location": get_location(title + link),
-        "published": pub_dt.strftime("%Y-%m-%d"),
-        "expiry": expiry.strftime("%Y-%m-%d"),
-        "summary": f"{get_location(title)} me {get_category(title)} ka tender jari hua hai."
-    }
+# If portal blocked / low results
+if len(data) < 5:
+    print("Low data, using fallback...")
+    data = fallback_rss()
 
-    data.append(tender)
+print("Final tenders:", len(data))
 
-print("Clean tenders:", len(data))
-
-# ================= JSON OUTPUT =================
 output = {
     "updated": datetime.now().strftime("%d %b %Y %H:%M"),
     "total": len(data),
@@ -109,4 +152,4 @@ output = {
 with open("tenders.json", "w", encoding="utf-8") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
 
-print("tenders.json generated successfully")
+print("tenders.json created")
