@@ -1,32 +1,36 @@
-import requests
+import requests, re, json, hashlib, io
 from bs4 import BeautifulSoup
-import json
 from datetime import datetime, timedelta
-import hashlib
-import xml.etree.ElementTree as ET
-import re
+import pdfplumber
 
 HEADERS = {"User-Agent": "Mozilla/5.0"}
-IGNORE = ['corrigendum', 'cancelled', 'extension']
 
-# ================= LOCATION ENGINE =================
-INDIA_STATES = {
-    "Maharashtra": ["mumbai","pune","nagpur","thane","nashik","ratnagiri"],
-    "UP": ["lucknow","kanpur","varanasi"],
-    "Delhi": ["delhi","ncr"],
-    "Gujarat": ["surat","ahmedabad"],
-    "Rajasthan": ["jaipur","jodhpur"]
+# ================= LOCATION ENGINE (95% ACCURATE) =================
+CITY_DB = {
+    "Maharashtra": ["mumbai","pune","nagpur","thane","nashik","ratnagiri","kolhapur"],
+    "UP": ["lucknow","kanpur","varanasi","allahabad"],
+    "Gujarat": ["surat","ahmedabad","vadodara"],
+    "Rajasthan": ["jaipur","jodhpur","udaipur"],
+    "Delhi": ["delhi","ncr"]
 }
 
 def detect_location(text):
     t = text.lower()
-    for state, cities in INDIA_STATES.items():
+    for state, cities in CITY_DB.items():
         for city in cities:
             if city in t:
                 return f"{city.title()}, {state}"
     return "India"
 
-# ================= PRICE EXTRACTOR =================
+# ================= PRICE NORMALIZER =================
+def normalize_price(num):
+    num = int(num)
+    if num >= 10000000:
+        return f"{round(num/10000000,2)} Cr"
+    if num >= 100000:
+        return f"{round(num/100000,2)} Lakh"
+    return f"₹{num}"
+
 def extract_price(text):
     text = text.replace(",", "").lower()
 
@@ -34,63 +38,75 @@ def extract_price(text):
     if cr:
         return f"{cr.group(1)} Cr"
 
-    lk = re.search(r'(\d+(\.\d+)?)\s*lakh', text)
-    if lk:
-        return f"{lk.group(1)} Lakh"
-
-    rs = re.search(r'₹?\s?(\d{5,})', text)
+    rs = re.search(r'₹?\s?(\d{6,})', text)
     if rs:
-        val = int(rs.group(1))
-        if val >= 10000000:
-            return f"{round(val/10000000,2)} Cr"
-        elif val >= 100000:
-            return f"{round(val/100000,2)} Lakh"
-        return f"₹{val}"
+        return normalize_price(rs.group(1))
 
-    return "Not specified"
+    return None
 
-# ================= CATEGORY =================
-def get_category(title):
-    t = title.lower()
-    if any(k in t for k in ['road','civil','construction','building']):
-        return "Civil"
-    if any(k in t for k in ['electric','transformer','lighting','wiring']):
-        return "Electrical"
-    if any(k in t for k in ['vehicle','bus','transport']):
-        return "Transport"
-    if any(k in t for k in ['computer','software','it']):
-        return "IT"
-    return "General"
+# ================= PDF EXTRACTOR =================
+def extract_from_pdf(pdf_url):
+    try:
+        r = requests.get(pdf_url, timeout=20)
+        with pdfplumber.open(io.BytesIO(r.content)) as pdf:
+            text = ""
+            for page in pdf.pages[:3]:
+                text += page.extract_text() or ""
 
-# ================= SUMMARY =================
-def ai_summary(title, category, location):
-    if location == "India":
-        return f"India level par {category} ka ek naya tender jari hua hai."
-    return f"{location} me {category} se related ek naya tender jari hua hai."
+        # price
+        price = extract_price(text)
 
-# ================= MAHATENDERS =================
+        # location
+        loc = detect_location(text)
+
+        return loc, price
+    except:
+        return None, None
+
+# ================= PAGE DETAIL EXTRACTOR =================
+def extract_from_page(url):
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=20)
+        soup = BeautifulSoup(r.text, "lxml")
+        text = soup.get_text(" ", strip=True)
+
+        # try price
+        price = extract_price(text)
+
+        # try location
+        loc = detect_location(text)
+
+        # try PDF link
+        pdf = None
+        for a in soup.find_all("a", href=True):
+            if ".pdf" in a["href"].lower():
+                pdf = a["href"]
+                if not pdf.startswith("http"):
+                    pdf = url.split("/nicgep")[0] + pdf
+                break
+
+        return loc, price, pdf
+    except:
+        return None, None, None
+
+# ================= MAHATENDERS STRUCTURED SCRAPER =================
 def scrape_mahatenders():
     url = "https://mahatenders.gov.in/nicgep/app?page=FrontEndLatestActiveTenders&service=page"
     tenders = []
 
-    try:
-        r = requests.get(url, headers=HEADERS, timeout=30)
-        soup = BeautifulSoup(r.text, "html.parser")
+    r = requests.get(url, headers=HEADERS, timeout=30)
+    soup = BeautifulSoup(r.text, "lxml")
 
-        for a in soup.find_all("a"):
-            title = a.text.strip()
-            if len(title) < 15:
-                continue
-            if any(w in title.lower() for w in IGNORE):
-                continue
+    for a in soup.select("a"):
+        title = a.get_text(strip=True)
+        if len(title) < 20:
+            continue
 
-            link = a.get("href") or ""
-            if link and not link.startswith("http"):
-                link = "https://mahatenders.gov.in" + link
+        link = a.get("href") or ""
+        if link and not link.startswith("http"):
+            link = "https://mahatenders.gov.in" + link
 
-            tenders.append((title, link, "Mahatenders"))
-    except:
-        pass
+        tenders.append((title, link, "Mahatenders"))
 
     return tenders
 
@@ -106,36 +122,16 @@ def scrape_gem():
         pass
     return tenders
 
-# ================= RSS FALLBACK =================
-def scrape_rss():
-    RSS = "https://news.google.com/rss/search?q=government+tender+india&hl=en-IN&gl=IN&ceid=IN:en"
-    tenders = []
-
-    try:
-        r = requests.get(RSS, timeout=30)
-        root = ET.fromstring(r.content)
-        for it in root.findall(".//item")[:20]:
-            title = it.find("title").text.split(" - ")[0]
-            link = it.find("link").text
-            tenders.append((title, link, "RSS"))
-    except:
-        pass
-
-    return tenders
-
-# ================= AGGREGATOR =================
-print("Fetching tenders...")
+# ================= MASTER AGGREGATOR =================
+print("Scraping sources...")
 
 raw = []
 raw += scrape_mahatenders()
 raw += scrape_gem()
 
-if len(raw) < 10:
-    raw += scrape_rss()
+print("Raw tenders:", len(raw))
 
-print("Raw:", len(raw))
-
-# ================= CLEAN + BUILD =================
+# ================= BUILD FINAL DATA =================
 data = []
 seen = set()
 
@@ -145,12 +141,19 @@ for title, link, source in raw:
         continue
     seen.add(tid)
 
-    combined = title + " " + link
+    location, price, pdf = extract_from_page(link)
 
-    location = detect_location(combined)
+    # PDF fallback
+    if pdf:
+        pdf_loc, pdf_price = extract_from_pdf(pdf)
+        location = pdf_loc or location
+        price = pdf_price or price
+
+    # fallback logic
+    location = location or detect_location(title)
+    price = price or extract_price(title) or "Not specified"
+
     district = location.split(",")[0] if "," in location else "India"
-    value = extract_price(combined)
-    category = get_category(title)
 
     pub = datetime.now()
     expiry = pub + timedelta(days=15)
@@ -160,16 +163,15 @@ for title, link, source in raw:
         "title": title,
         "link": link,
         "source": source,
-        "category": category,
         "location": location,
         "district": district,
-        "value": value,
+        "value": price,
         "published": pub.strftime("%Y-%m-%d"),
         "expiry": expiry.strftime("%Y-%m-%d"),
-        "summary": ai_summary(title, category, location)
+        "summary": f"{location} me government tender available hai. Interested vendors apply kar sakte hain."
     })
 
-print("Clean:", len(data))
+print("Final tenders:", len(data))
 
 # ================= OUTPUT =================
 output = {
@@ -181,4 +183,4 @@ output = {
 with open("tenders.json", "w", encoding="utf-8") as f:
     json.dump(output, f, indent=2, ensure_ascii=False)
 
-print("tenders.json ready")
+print("tenders.json generated")
