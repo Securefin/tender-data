@@ -1,5 +1,5 @@
 {
-  "updated": "04 Mar 2026 01:44",
+  "updated": "04 Mar 2026 12:45",
   "total": 9,
   "data": [
     {
@@ -19,12 +19,12 @@
       "title": "Tenders by Closing Date",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndListTendersbyDate&service=page",
       "source": "Mahatenders",
-      "location": "Mumbai, Maharashtra",
-      "district": "Mumbai",
-      "value": "12.81 Lakh",
+      "location": "Pune, Maharashtra",
+      "district": "Pune",
+      "value": "12.83 Lakh",
       "published": "2026-03-04",
       "expiry": "2026-03-19",
-      "summary": "Mumbai, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
+      "summary": "Pune, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
     },
     {
       "id": "42f9001784d73509295bb1b0b4b01e8a",
