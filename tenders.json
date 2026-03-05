@@ -1,5 +1,5 @@
 {
-  "updated": "05 Mar 2026 01:46",
+  "updated": "05 Mar 2026 12:52",
   "total": 9,
   "data": [
     {
@@ -21,7 +21,7 @@
       "source": "Mahatenders",
       "location": "Mumbai, Maharashtra",
       "district": "Mumbai",
-      "value": "12.83 Lakh",
+      "value": "12.82 Lakh",
       "published": "2026-03-05",
       "expiry": "2026-03-20",
       "summary": "Mumbai, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
@@ -103,12 +103,12 @@
       "title": "National Informatics Centre",
       "link": "http://www.nic.in",
       "source": "Mahatenders",
-      "location": "India",
-      "district": "India",
-      "value": "Not specified",
+      "location": "Mumbai, Maharashtra",
+      "district": "Mumbai",
+      "value": "84.65 Cr",
       "published": "2026-03-05",
       "expiry": "2026-03-20",
-      "summary": "India me government tender available hai. Interested vendors apply kar sakte hain."
+      "summary": "Mumbai, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
     }
   ]
 }
