@@ -1,5 +1,5 @@
 {
-  "updated": "31 May 2026 02:58",
+  "updated": "31 May 2026 13:27",
   "total": 9,
   "data": [
     {
@@ -19,12 +19,12 @@
       "title": "Tenders by Closing Date",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndListTendersbyDate&service=page",
       "source": "Mahatenders",
-      "location": "Mumbai, Maharashtra",
-      "district": "Mumbai",
-      "value": "12.85 Lakh",
+      "location": "India",
+      "district": "India",
+      "value": "3.24 Cr",
       "published": "2026-05-31",
       "expiry": "2026-06-15",
-      "summary": "Mumbai, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
+      "summary": "India me government tender available hai. Interested vendors apply kar sakte hain."
     },
     {
       "id": "42f9001784d73509295bb1b0b4b01e8a",
@@ -103,12 +103,12 @@
       "title": "National Informatics Centre",
       "link": "http://www.nic.in",
       "source": "Mahatenders",
-      "location": "India",
-      "district": "India",
+      "location": "Delhi, Delhi",
+      "district": "Delhi",
       "value": "Not specified",
       "published": "2026-05-31",
       "expiry": "2026-06-15",
-      "summary": "India me government tender available hai. Interested vendors apply kar sakte hain."
+      "summary": "Delhi, Delhi me government tender available hai. Interested vendors apply kar sakte hain."
     }
   ]
 }
