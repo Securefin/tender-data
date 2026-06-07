@@ -1,5 +1,5 @@
 {
-  "updated": "07 Jun 2026 03:26",
+  "updated": "07 Jun 2026 13:43",
   "total": 9,
   "data": [
     {
@@ -19,12 +19,12 @@
       "title": "Tenders by Closing Date",
       "link": "https://mahatenders.gov.in/nicgep/app?page=FrontEndListTendersbyDate&service=page",
       "source": "Mahatenders",
-      "location": "Pune, Maharashtra",
-      "district": "Pune",
-      "value": "13.04 Lakh",
+      "location": "India",
+      "district": "India",
+      "value": "3.24 Cr",
       "published": "2026-06-07",
       "expiry": "2026-06-22",
-      "summary": "Pune, Maharashtra me government tender available hai. Interested vendors apply kar sakte hain."
+      "summary": "India me government tender available hai. Interested vendors apply kar sakte hain."
     },
     {
       "id": "42f9001784d73509295bb1b0b4b01e8a",
